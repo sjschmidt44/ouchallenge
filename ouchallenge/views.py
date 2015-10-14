@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from waitress import serve
-from pyramid.config import Configurator
 from pyramid.view import view_config
 from sqlalchemy import engine_from_config
 from mode import stat_mode
@@ -48,7 +46,6 @@ def get_price(request):
         row_count = 0
         response = {'status': '200', 'content': {}}
         city = 'Not Specified'
-        item = 'Not Specified'
 
         if 'city' not in request.GET and 'item' not in request.GET:
             response['status'] = '404'
@@ -91,24 +88,3 @@ def get_price(request):
         )
 
     return json.dumps(response)
-
-
-def main():
-    """Create a configured wsgi app"""
-    settings = {}
-    debug = os.environ.get('DEBUG', False)
-    settings['reload_all'] = debug
-    settings['debug_all'] = debug
-    config = Configurator(settings=settings)
-    config.include('pyramid_tm')
-    config.add_route('get_price', '/item-price-service/')
-
-    config.scan()
-    app = config.make_wsgi_app()
-    return app
-
-
-if __name__ == '__main__':
-    app = main()
-    port = os.environ.get('PORT', 8000)
-    serve(app, host='0.0.0.0', port=port)
