@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from pyramid.view import view_config
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy import engine_from_config
 from mode import stat_mode
 import os
@@ -88,3 +89,11 @@ def get_price(request):
         )
 
     return json.dumps(response)
+
+
+@view_config(context=DBAPIError)
+def db_exception(context, request):
+    from pyramid.response import Response
+    response = Response(context.message)
+    response.status_int = 500
+    return response

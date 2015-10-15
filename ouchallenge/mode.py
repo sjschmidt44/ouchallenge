@@ -1,6 +1,6 @@
 def stat_mode(list_in):
-    '''Returns a list of the most common occuring value(s) and their frequency
-    from list argument.'''
+    '''Returns a list of the most common occuring value(s) from list
+    argument.'''
     cnt_dict = {}
     for idx in (list_in):
         count = list_in.count(idx)
