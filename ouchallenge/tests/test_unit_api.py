@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
-import unittest
 from pyramid import testing
+import unittest
 
 
 class ViewTests(unittest.TestCase):

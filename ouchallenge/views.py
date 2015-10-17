@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from pyramid.view import view_config
-from sqlalchemy.exc import DBAPIError
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import scoped_session, sessionmaker
+from zope.sqlalchemy import ZopeTransactionExtension
 from sqlalchemy import engine_from_config
+from pyramid.view import view_config
 from mode import stat_mode
 import os
 import json
+
+# import pdb; pdb.set_trace()
+# Create DBSession - May allow multi-threaded requests for better performance
 
 
 def make_engine():
@@ -28,6 +33,13 @@ def make_engine():
     }
     return engine_from_config(settings, prefix='')
 
+DBSession = scoped_session(
+    sessionmaker(
+        extension=ZopeTransactionExtension()
+    )
+)
+Base = declarative_base()
+
 
 @view_config(route_name='get_price', renderer='json')
 def get_price(request):
@@ -42,9 +54,9 @@ def get_price(request):
 
     else:
         engine = make_engine()
-        conn = engine.connect()
+        session = DBSession
+        conn = session.connection(bind=engine)
         list_prices = [0]
-        row_count = 0
         response = {'status': '200', 'content': {}}
         city = 'Not Specified'
 
@@ -55,10 +67,13 @@ def get_price(request):
 
         elif 'city' not in request.GET and 'item' in request.GET:
             item = request.GET['item']
+            # Need to review sqlalchemy docs for sql injection issues
+            # and how to avoid with sqlalchemy query
             query = """
                 SELECT list_price
                 FROM "itemPrices_itemsale"
-                WHERE title = '{item}'""".format(item=item)
+                WHERE title = %s"""
+            db_query = conn.execute(query, (item))
 
         elif 'city' in request.GET and 'item' in request.GET:
             city = request.GET['city']
@@ -66,17 +81,16 @@ def get_price(request):
             query = """
                 SELECT list_price
                 FROM "itemPrices_itemsale"
-                WHERE title = '{item}'
-                AND city = '{city}'""".format(item=item, city=city)
+                WHERE title = %s
+                AND city = %s"""
+            db_query = conn.execute(query, (item, city))
 
         else:
             response['status'] = '404'
             response['content'].setdefault('message', 'Not Found.')
             return json.dumps(response)
 
-        db_query = conn.execute(query)
         row_count = db_query.rowcount
-
         for num in db_query.fetchall():
             list_prices.append(num[0])
 
@@ -87,13 +101,5 @@ def get_price(request):
             'price_suggestion',
             max(stat_mode(list_prices))
         )
-
+    conn.close()
     return json.dumps(response)
-
-
-@view_config(context=DBAPIError)
-def db_exception(context, request):
-    from pyramid.response import Response
-    response = Response(context.message)
-    response.status_int = 500
-    return response
