@@ -1,3 +1,5 @@
+# Solution found at http://stackoverflow.com/a/27714192
+
 def stat_mode(list_in):
     '''Returns a list of the most common occuring value(s) from list
     argument.'''
