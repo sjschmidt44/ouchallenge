@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 from zope.sqlalchemy import ZopeTransactionExtension
 from sqlalchemy import engine_from_config
+from sqlalchemy.sql import text
 from pyramid.view import view_config
 from mode import stat_mode
 import os
 import json
-
-# import pdb; pdb.set_trace()
-# Create DBSession - May allow multi-threaded requests for better performance
 
 
 def make_engine():
@@ -33,13 +30,6 @@ def make_engine():
     }
     return engine_from_config(settings, prefix='')
 
-DBSession = scoped_session(
-    sessionmaker(
-        extension=ZopeTransactionExtension()
-    )
-)
-Base = declarative_base()
-
 
 @view_config(route_name='get_price', renderer='json')
 def get_price(request):
@@ -54,11 +44,14 @@ def get_price(request):
 
     else:
         engine = make_engine()
-        session = DBSession
-        conn = session.connection(bind=engine)
+        conn = scoped_session(sessionmaker(
+            extension=ZopeTransactionExtension(),
+            bind=engine)
+        )
         list_prices = [0]
         response = {'status': '200', 'content': {}}
         city = 'Not Specified'
+        # import pdb; pdb.set_trace()
 
         if 'city' not in request.GET and 'item' not in request.GET:
             response['status'] = '404'
@@ -67,23 +60,21 @@ def get_price(request):
 
         elif 'city' not in request.GET and 'item' in request.GET:
             item = request.GET['item']
-            # Need to review sqlalchemy docs for sql injection issues
-            # and how to avoid with sqlalchemy query
-            query = """
+            query = text('''
                 SELECT list_price
                 FROM "itemPrices_itemsale"
-                WHERE title = ':item'"""
-            db_query = conn.execute(query, (item))
+                WHERE title = :item''')
+            db_query = conn.execute(query, params=dict(item=item))
 
         elif 'city' in request.GET and 'item' in request.GET:
             city = request.GET['city']
             item = request.GET['item']
-            query = """
+            query = text('''
                 SELECT list_price
                 FROM "itemPrices_itemsale"
-                WHERE title = ':item'
-                AND city = ':city'"""
-            db_query = conn.execute(query, item=item, city=city)
+                WHERE title = :item
+                AND city = :city''')
+            db_query = conn.execute(query, params=dict(item=item, city=city))
 
         else:
             response['status'] = '404'
@@ -101,5 +92,5 @@ def get_price(request):
             'price_suggestion',
             max(stat_mode(list_prices))
         )
-    conn.close()
+    # conn.remove()
     return json.dumps(response)
