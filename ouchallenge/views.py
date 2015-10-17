@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from sqlalchemy.ext.declarative import declarative_base
-# from sqlalchemy import engine_from_config, MetaData, Table
 from sqlalchemy import engine_from_config
-# from sqlalchemy.orm import (
-#     scoped_session, sessionmaker, mapper
-# )
 from sqlalchemy.orm import (
     scoped_session, sessionmaker
 )
@@ -47,23 +43,11 @@ class Item_prices(Base):
 
 
 def loadSession():
-    """"""
+    """Auto load Table Data from DB connection, and return scoped session"""
     metadata = Base.metadata
     Session = scoped_session(sessionmaker(bind=engine))
     session = Session()
     return session
-
-
-# def loadSession():
-#     """"""
-#     engine = make_engine()
-#     metadata = MetaData(engine)
-#     prices = Table('itemPrices_itemsale', metadata, autoload=True)
-#     mapper(Item_prices, prices)
-
-#     Session = scoped_session(sessionmaker(bind=engine))
-#     session = Session()
-#     return session
 
 
 @view_config(route_name='get_price', renderer='json')
@@ -78,8 +62,6 @@ def get_price(request):
         return json.dumps(response)
 
     else:
-        # engine = make_engine()
-        # conn = scoped_session(sessionmaker(bind=engine))
         conn = loadSession()
         list_prices = [0]
         response = {'status': '200', 'content': {}}
