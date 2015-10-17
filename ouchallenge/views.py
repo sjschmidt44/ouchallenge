@@ -72,7 +72,7 @@ def get_price(request):
             query = """
                 SELECT list_price
                 FROM "itemPrices_itemsale"
-                WHERE title = %s"""
+                WHERE title = ':item'"""
             db_query = conn.execute(query, (item))
 
         elif 'city' in request.GET and 'item' in request.GET:
@@ -81,9 +81,9 @@ def get_price(request):
             query = """
                 SELECT list_price
                 FROM "itemPrices_itemsale"
-                WHERE title = %s
-                AND city = %s"""
-            db_query = conn.execute(query, (item, city))
+                WHERE title = ':item'
+                AND city = ':city'"""
+            db_query = conn.execute(query, item=item, city=city)
 
         else:
             response['status'] = '404'
