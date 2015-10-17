@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
-from sqlalchemy.orm import scoped_session, sessionmaker
-from zope.sqlalchemy import ZopeTransactionExtension
+from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy import engine_from_config, MetaData, Table
 from sqlalchemy import engine_from_config
+# from sqlalchemy.orm import (
+#     scoped_session, sessionmaker, mapper
+# )
+from sqlalchemy.orm import (
+    scoped_session, sessionmaker
+)
 from sqlalchemy.sql import text
 from pyramid.view import view_config
 from mode import stat_mode
@@ -31,6 +37,35 @@ def make_engine():
     return engine_from_config(settings, prefix='')
 
 
+engine = make_engine()
+Base = declarative_base(engine)
+
+
+class Item_prices(Base):
+    __tablename__ = 'itemPrices_itemsale'
+    __table_args__ = {'autoload': True}
+
+
+def loadSession():
+    """"""
+    metadata = Base.metadata
+    Session = scoped_session(sessionmaker(bind=engine))
+    session = Session()
+    return session
+
+
+# def loadSession():
+#     """"""
+#     engine = make_engine()
+#     metadata = MetaData(engine)
+#     prices = Table('itemPrices_itemsale', metadata, autoload=True)
+#     mapper(Item_prices, prices)
+
+#     Session = scoped_session(sessionmaker(bind=engine))
+#     session = Session()
+#     return session
+
+
 @view_config(route_name='get_price', renderer='json')
 def get_price(request):
     if request.method != 'GET':
@@ -43,11 +78,9 @@ def get_price(request):
         return json.dumps(response)
 
     else:
-        engine = make_engine()
-        conn = scoped_session(sessionmaker(
-            extension=ZopeTransactionExtension(),
-            bind=engine)
-        )
+        # engine = make_engine()
+        # conn = scoped_session(sessionmaker(bind=engine))
+        conn = loadSession()
         list_prices = [0]
         response = {'status': '200', 'content': {}}
         city = 'Not Specified'
@@ -65,6 +98,7 @@ def get_price(request):
                 FROM "itemPrices_itemsale"
                 WHERE title = :item''')
             db_query = conn.execute(query, params=dict(item=item))
+            conn.close()
 
         elif 'city' in request.GET and 'item' in request.GET:
             city = request.GET['city']
@@ -75,6 +109,7 @@ def get_price(request):
                 WHERE title = :item
                 AND city = :city''')
             db_query = conn.execute(query, params=dict(item=item, city=city))
+            conn.close()
 
         else:
             response['status'] = '404'
@@ -92,5 +127,5 @@ def get_price(request):
             'price_suggestion',
             max(stat_mode(list_prices))
         )
-    # conn.remove()
+
     return json.dumps(response)
