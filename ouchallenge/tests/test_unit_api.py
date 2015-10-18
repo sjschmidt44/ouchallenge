@@ -21,12 +21,10 @@ def test_bad_environ_vars_make_engine():
     pass
 
 
-def test_Item_prices_table():
-    pass
-
-
 def test_load_session():
-    pass
+    from ouchallenge.views import loadSession
+    conn = loadSession()
+    assert conn.is_active is True
 
 
 def test_api_request_item_and_city(app):
@@ -77,8 +75,3 @@ def test_post_method(app):
     assert response.status_code is 200
     body = json.loads(response.body)
     assert 'Permission Denied' in body
-    # import pdb; pdb.set_trace()
-
-
-def test_x(app):
-    pass
