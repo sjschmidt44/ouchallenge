@@ -17,10 +17,6 @@ def test_make_engine():
     assert conn.has_table("itemPrices_itemsale") is True
 
 
-def test_bad_environ_vars_make_engine():
-    pass
-
-
 def test_load_session():
     from ouchallenge.views import loadSession
     conn = loadSession()
@@ -39,6 +35,18 @@ def test_api_request_item_and_city(app):
     assert '"price_suggestion": 21, "item_count": 8' in body
 
 
+def test_api_request_item_exist_and_city_no_exist(app):
+    url = "/item-price-service/"
+    params = {
+        "item": 'Furniture',
+        "city": 'Blargh'
+    }
+    response = app.get(url, params)
+    assert response.status_code is 200
+    body = json.loads(response.body)
+    assert '"price_suggestion": 0, "item_count": 0' in body
+
+
 def test_api_request_item_only(app):
     url = "/item-price-service/"
     params = {
@@ -48,6 +56,17 @@ def test_api_request_item_only(app):
     assert response.status_code is 200
     body = json.loads(response.body)
     assert '"price_suggestion": 48, "item_count": 105' in body
+
+
+def test_api_request_item_no_exist(app):
+    url = "/item-price-service/"
+    params = {
+        "item": 'snuffaluffagus'
+    }
+    response = app.get(url, params)
+    assert response.status_code is 200
+    body = json.loads(response.body)
+    assert '"price_suggestion": 0, "item_count": 0' in body
 
 
 def test_api_request_city_only(app):
@@ -61,6 +80,40 @@ def test_api_request_city_only(app):
     assert 'Not Found' in body
 
 
+def test_city_empty_string(app):
+    url = "/item-price-service/"
+    params = {
+        "city": ' ',
+        "item": 'Furniture'
+    }
+    response = app.get(url, params)
+    assert response.status_code is 200
+    body = json.loads(response.body)
+    assert '"price_suggestion": 0, "item_count": 0' in body
+
+
+def test_item_empty_string(app):
+    url = "/item-price-service/"
+    params = {
+        "item": ' '
+    }
+    response = app.get(url, params)
+    assert response.status_code is 200
+    body = json.loads(response.body)
+    assert '"price_suggestion": 0, "item_count": 0' in body
+
+
+def test_sql_injection(app):
+    url = "/item-price-service/"
+    params = {
+        "item": '''"Furniture"; SELECT * FROM "itemPrices_itemsale"'''
+    }
+    response = app.get(url, params)
+    assert response.status_code is 200
+    body = json.loads(response.body)
+    assert '"price_suggestion": 0, "item_count": 0' in body
+
+
 def test_no_params(app):
     url = "/item-price-service/"
     response = app.get(url)
@@ -72,6 +125,30 @@ def test_no_params(app):
 def test_post_method(app):
     url = "/item-price-service/"
     response = app.post(url)
+    assert response.status_code is 200
+    body = json.loads(response.body)
+    assert 'Permission Denied' in body
+
+
+def test_patch_method(app):
+    url = "/item-price-service/"
+    response = app.patch(url)
+    assert response.status_code is 200
+    body = json.loads(response.body)
+    assert 'Permission Denied' in body
+
+
+def test_put_method(app):
+    url = "/item-price-service/"
+    response = app.put(url)
+    assert response.status_code is 200
+    body = json.loads(response.body)
+    assert 'Permission Denied' in body
+
+
+def test_delete_method(app):
+    url = "/item-price-service/"
+    response = app.delete(url)
     assert response.status_code is 200
     body = json.loads(response.body)
     assert 'Permission Denied' in body
