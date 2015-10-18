@@ -66,7 +66,6 @@ def get_price(request):
         list_prices = [0]
         response = {'status': '200', 'content': {}}
         city = 'Not Specified'
-        # import pdb; pdb.set_trace()
 
         if 'city' not in request.GET and 'item' not in request.GET:
             response['status'] = '404'
