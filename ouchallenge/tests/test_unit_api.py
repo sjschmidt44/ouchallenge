@@ -32,7 +32,7 @@ def test_api_request_item_and_city(app):
     response = app.get(url, params)
     assert response.status_code is 200
     body = json.loads(response.body)
-    assert '"price_suggestion": 21, "item_count": 8' in body
+    assert '"price_suggestion": 48, "item_count": 8' in body
 
 
 def test_api_request_item_exist_and_city_no_exist(app):
