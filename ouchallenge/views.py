@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy.orm import (
     scoped_session, sessionmaker
 )
-from sqlalchemy.sql import text
+# from sqlalchemy.sql import text
 from pyramid.view import view_config
 from mode import stat_mode
 import os
@@ -74,22 +74,18 @@ def get_price(request):
 
         elif 'city' not in request.GET and 'item' in request.GET:
             item = request.GET['item']
-            query = text('''
-                SELECT list_price
-                FROM "itemPrices_itemsale"
-                WHERE title = :item''')
-            db_query = conn.execute(query, params=dict(item=item))
+            query = conn.query(Item_prices).filter(
+                Item_prices.title == item
+            ).all()
             conn.close()
 
         elif 'city' in request.GET and 'item' in request.GET:
             city = request.GET['city']
             item = request.GET['item']
-            query = text('''
-                SELECT list_price
-                FROM "itemPrices_itemsale"
-                WHERE title = :item
-                AND city = :city''')
-            db_query = conn.execute(query, params=dict(item=item, city=city))
+            query = conn.query(Item_prices).filter(
+                Item_prices.title == item,
+                Item_prices.city == city
+            ).all()
             conn.close()
 
         else:
@@ -97,16 +93,15 @@ def get_price(request):
             response['content'].setdefault('message', 'Not Found.')
             return json.dumps(response)
 
-        row_count = db_query.rowcount
-        for num in db_query.fetchall():
-            list_prices.append(num[0])
+        row_count = len(query)
+        for idx in range(len(query) - 1):
+            list_prices.append(query[idx].list_price)
+
+        price_suggestion = max(stat_mode(list_prices))
 
         response['content'].setdefault('item', item)
         response['content'].setdefault('item_count', row_count)
         response['content'].setdefault('city', city)
-        response['content'].setdefault(
-            'price_suggestion',
-            max(stat_mode(list_prices))
-        )
+        response['content'].setdefault('price_suggestion', price_suggestion)
 
     return json.dumps(response)

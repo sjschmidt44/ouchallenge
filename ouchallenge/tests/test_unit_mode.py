@@ -34,8 +34,7 @@ def test_mode_fixed_uniques(fixed_mode_list_unique):
 
 def test_mode_of_tuple():
     li = (1, 2, 3, 4)
-    res = sm(li)
-    assert 'No Mode' in res
+    assert sm(li) == [1, 2, 3, 4]
 
 
 def test_mode_of_dict():
